@@ -16,12 +16,14 @@ import (
 var apiKey string
 
 func main() {
+	config := args2config()
 	var found bool
 	apiKey, found = os.LookupEnv("CLOUDLOG_API_KEY")
 	if !found {
-		log.Fatal("CLOUDLOG_API_KEY must be set")
+		fmt.Println("CLOUDLOG_API_KEY must be set\n")
+		flag.Usage()
+		os.Exit(1)
 	}
-	config := args2config()
 	file := flag.Args()[0]
 	t, err := tail.TailFile(file, config)
 	if err != nil {
@@ -41,6 +43,8 @@ func args2config() tail.Config {
 	flag.Usage = func() {
 		fmt.Printf(`Usage: %s [-b] <ADIF log> <cloudlog url>
   Example: adif2logcloud ~/.local/share/WSJT-X/wsjtx_log.adi http://localhost/Cloudlog
+
+  The Cloudlog API key shoud be passed in the CLOUDLOG_API_KEY environment variable.
 `, os.Args[0])
 		flag.PrintDefaults()
 	}
