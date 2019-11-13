@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -19,15 +21,13 @@ func main() {
 	if !found {
 		log.Fatal("CLOUDLOG_API_KEY must be set")
 	}
-	if len(os.Args) != 3 {
-		log.Fatal("Usage adif2logcloud <ADIF log> <cloudlog url>\n  Example adif2logcloud ~/.local/share/WSJT-X/wsjtx_log.adi http://localhost/cloudlog")
-	}
-	file := os.Args[1]
-	t, err := tail.TailFile(file, tail.Config{Follow: true})
+	config := args2config()
+	file := flag.Args()[0]
+	t, err := tail.TailFile(file, config)
 	if err != nil {
 		log.Fatalf("Error tailing %s: %v", file, err)
 	}
-	url := os.Args[2]
+	url := flag.Args()[1]
 	if !strings.HasSuffix(url, "/") {
 		url += "/"
 	}
@@ -35,6 +35,29 @@ func main() {
 	for line := range t.Lines {
 		sendLine(line.Text, url)
 	}
+}
+
+func args2config() tail.Config {
+	flag.Usage = func() {
+		fmt.Printf(`Usage: %s [-b] <ADIF log> <cloudlog url>
+  Example: adif2logcloud ~/.local/share/WSJT-X/wsjtx_log.adi http://localhost/Cloudlog
+`, os.Args[0])
+		flag.PrintDefaults()
+	}
+	config := tail.Config{Follow: true}
+	var fromBeginning bool
+	flag.BoolVar(&fromBeginning, "b", false, "If true, load entire log file from the beginning, otherwise tail the file, only posting new entries to Cloudlog.")
+	flag.Parse()
+	if len(flag.Args()) < 2 {
+		flag.Usage()
+		os.Exit(1)
+	}
+	if !fromBeginning {
+		config.Location = &tail.SeekInfo{
+			Whence: os.SEEK_END,
+		}
+	}
+	return config
 }
 
 type cloudlogRequest struct {
@@ -45,7 +68,11 @@ type cloudlogRequest struct {
 }
 
 func sendLine(line string, url string) {
-	log.Printf("Sending '%s", line)
+	if len(line) == 0 {
+		log.Print("Skipping blank line")
+		return
+	}
+	log.Printf("Sending '%s'", line)
 	req := cloudlogRequest{APIKey: apiKey, Type: "adif", Line: line}
 	buf := new(bytes.Buffer)
 	json.NewEncoder(buf).Encode(req)
