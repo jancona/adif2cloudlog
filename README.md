@@ -9,9 +9,9 @@ This version of the tool works with Cloudlog version 2 and later.
 
 -b If true, load entire log file from the beginning, otherwise tail the file, only posting new entries to Cloudlog.
 ```
-`adif2cloudlog` requires an API key to call Cloudlog's REST API. The API key may be obtained through the Admin|API menu options in the Cloudlog dashboard. Choose the _Generate Key with Read & Write Access_ button. The key is passed to `adif2cloudlog` in the `CLOUDLOG_API_KEY` environment variable so that it will not be visible using the `ps` command.
+`adif2cloudlog` requires an API key to call Cloudlog's REST API. The API key may be obtained through the *\<User\>|API Keys* menu options in the Cloudlog dashboard. Choose the _Create a  Read & Write Key_ button. The key is passed to `adif2cloudlog` in the `CLOUDLOG_API_KEY` environment variable so that it will not be visible using the `ps` command.
 
 ## Example 
 ```
-adif2logcloud ~/.local/share/WSJT-X/wsjtx_log.adi 1 http://cloudlog.example.com
+CLOUDLOG_API_KEY=xxxxxxxxxxxxxxx adif2logcloud ~/.local/share/WSJT-X/wsjtx_log.adi 1 http://cloudlog.example.com
 ```
